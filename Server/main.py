@@ -43,6 +43,13 @@ async def process_audio(websocket, audio_data):
         # Собираем текст (сегменты указывают не весь текст в аудио, а только в некотором промежутке времени. Для получения полной расщифровки их необходимо объединять)
         transcription = "".join([segment.text for segment in segments])
         
+        # Можно использовать для поиска и удаления определённых фраз. Так как STT прибавляет пробелы, то будет очень нужным
+        #print(f'Расшифровка. Длина {len(transcription)}. Текст:"{transcription}"')
+        
+        # " Продолжение следует..." и другие "приколы" от Fast Whisper при пустом аудио (без слов)
+        if transcription == " Продолжение следует..." or transcription == " Субтитры создавал DimaTorzok" or transcription == " Субтитры сделал DimaTorzok":
+            transcription = ""
+        
         # Отправляем обратно клиенту (поддерживается в сокетах по умолчанию)
         await websocket.send(transcription)
         print(f"Клиент получил расшифроку: {transcription}")
