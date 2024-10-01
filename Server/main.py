@@ -21,9 +21,16 @@ async def handle_client(websocket, path):
             print(f"Запись с клиента была получена")
             # Добавляем запрос в асинхронную очередь
             await audio_queue.put((websocket, message))
-    # Ошибка 1001 (no close frame received or sent) - это не критическая ошибка. Она означает что клиент отключился от сервера
+        # Правильное закрытие соединения
+    # Тут если клиент вдруг закрыл соединение (вдруг у человека интернет пропал)
+    except websockets.exceptions.ConnectionClosed:
+        print("Соединение с клиентом закрыто")
     except Exception as e:
         print(f"Произошла ошибка: {e}")
+        # Тут уже сервер закрывает соединение, так как его задача выполнена
+    finally:
+        await websocket.close()
+        print("Соединение WebSocket закрыто")
 
 async def process_audio_queue():
     while True:
