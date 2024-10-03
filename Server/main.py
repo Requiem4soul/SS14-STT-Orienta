@@ -4,6 +4,8 @@ import json
 import io
 from faster_whisper import WhisperModel
 import soundfile as sf
+import numpy as np
+
 
 # Инициализация модели
 print("Начало загрузки модели, это займёт время при первом запуске")
@@ -44,8 +46,13 @@ async def process_audio(websocket, audio_data):
         wav_bytes = io.BytesIO(audio_data)
         audio_data, sample_rate = sf.read(wav_bytes)
         
+        # Если аудиоданные уже в формате float32, пропускаем преобразование
+        if audio_data.dtype != np.float32:
+            # Преобразуем аудиоданные в float32, если это не так
+            audio_data = audio_data.astype(np.float32)
+        
         # STT (аудио обрабатывается в распознанный текст)
-        segments, _ = model.transcribe(audio_data, beam_size=5, language="ru")
+        segments, _ = model.transcribe(audio_data, beam_size=5, language="ru", vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500))
         
         # Собираем текст (сегменты указывают не весь текст в аудио, а только в некотором промежутке времени. Для получения полной расщифровки их необходимо объединять)
         transcription = "".join([segment.text for segment in segments])
